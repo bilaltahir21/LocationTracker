@@ -1,11 +1,5 @@
 package com.services.location;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
@@ -15,12 +9,17 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -32,20 +31,22 @@ import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
+    //Intervals for resolution requests
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 3000;
+    private static final long UPDATE_INTERVAL = 2000, FASTEST_INTERVAL = 2000; // = 2 seconds
+    // integer for permissions results request
+    private static final int ALL_PERMISSIONS_RESULT = 1011;
+    //For location updates
+    LocationRequest locationRequest;
     //TextView in our XML file
     private TextView locationTv;
     //Google Api client which is instantiated
     // later on the onCreate method
     private GoogleApiClient googleApiClient;
-    //Intervals for resolution requests
-    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-    private static final long UPDATE_INTERVAL = 5000, FASTEST_INTERVAL = 5000; // = 5 seconds
     // lists for permissions
     private ArrayList<String> permissionsToRequest;
     private ArrayList<String> permissionsRejected = new ArrayList<>();
     private ArrayList<String> permissions = new ArrayList<>();
-    // integer for permissions results request
-    private static final int ALL_PERMISSIONS_RESULT = 1011;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+        //Because location updates are required
+        locationRequest = new LocationRequest();
     }
 
     private ArrayList<String> permissionsToRequest(ArrayList<String> wantedPermissions) {
@@ -102,16 +105,23 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     protected void onResume() {
         super.onResume();
         if (!checkPlayServices()) {
-            locationTv.setText("You need to install Google Play Services to use the App properly");
+            locationTv.setText(R.string.you_need_google_play);
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        //This method is called when activity loses focus
+        //It just pauses background tasks about location
         // stop location updates
         if (googleApiClient != null && googleApiClient.isConnected()) {
-            FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+            // Permissions is granted, we get last location
+            FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+            //FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+            //Above function is deprecated, bellow  is alternative
+            LocationCallback locationCallback = new LocationCallback();
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback);
             googleApiClient.disconnect();
         }
     }
@@ -146,8 +156,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onSuccess(Location location) {
                 // Got last known location. In some rare situations, this can be null.
-                if (location!=null){
-                    locationTv.setText("Latitude : " + location.getLatitude() + "\nLongitude : " + location.getLongitude());
+                if (location != null) {
+                    String currentLocation = getString(R.string.lat) + location.getLatitude() + getString(R.string.longi) + location.getLongitude() + "\"";
+                    locationTv.setText(currentLocation);
                 }
             }
         });
@@ -155,11 +166,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     private void startLocationUpdates() {
-        LocationRequest locationRequest = new LocationRequest();
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(UPDATE_INTERVAL);
-        locationRequest.setFastestInterval(FASTEST_INTERVAL);
-
+        instantiateUpdater();
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this,
@@ -167,6 +174,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             Toast.makeText(this, "You need to enable permissions to display location !", Toast.LENGTH_SHORT).show();
         }
         FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
+    }
+
+    private void instantiateUpdater() {
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(UPDATE_INTERVAL);
+        locationRequest.setFastestInterval(FASTEST_INTERVAL);
     }
 
     @Override
@@ -180,7 +193,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
-            locationTv.setText("Latitude : " + location.getLatitude() + "\nLongitude : " + location.getLongitude());
+            //Here we display out current location
+            String currentLocation = getString(R.string.lat) + location.getLatitude() + getString(R.string.longi) + location.getLongitude() + "\"";
+            locationTv.setText(currentLocation);
         }
     }
 
@@ -195,9 +210,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         permissionsRejected.add(perm);
                     }
                 }
-
                 if (permissionsRejected.size() > 0) {
-
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         if (shouldShowRequestPermissionRationale(permissionsRejected.get(0))) {
                             new AlertDialog.Builder(MainActivity.this).

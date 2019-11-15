@@ -1004,8 +1004,11 @@ int string common_google_play_services_wear_update_text 0x7f0c002a
 int string common_open_on_phone 0x7f0c002b
 int string common_signin_button_text 0x7f0c002c
 int string common_signin_button_text_long 0x7f0c002d
-int string search_menu_title 0x7f0c002e
-int string status_bar_notification_info_overflow 0x7f0c002f
+int string lat 0x7f0c002e
+int string longi 0x7f0c002f
+int string search_menu_title 0x7f0c0030
+int string status_bar_notification_info_overflow 0x7f0c0031
+int string you_need_google_play 0x7f0c0032
 int style AlertDialog_AppCompat 0x7f0d0000
 int style AlertDialog_AppCompat_Light 0x7f0d0001
 int style Animation_AppCompat_Dialog 0x7f0d0002

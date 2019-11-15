@@ -1005,8 +1005,11 @@ string common_google_play_services_wear_update_text
 string common_open_on_phone
 string common_signin_button_text
 string common_signin_button_text_long
+string lat
+string longi
 string search_menu_title
 string status_bar_notification_info_overflow
+string you_need_google_play
 style AlertDialog_AppCompat
 style AlertDialog_AppCompat_Light
 style Animation_AppCompat_Dialog
